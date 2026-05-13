@@ -20,6 +20,7 @@ void printCalibration() {
   Serial.printf("Output Voltage Ratio: %u\n", cal->outVoltRatio);
   Serial.printf("Output Current Offset: %d\n", cal->outCurOffset);
   Serial.printf("Output Current Ratio: %lu\n", (unsigned long)cal->outCurRatio);
+  Serial.println();
 }
 
 void setup() {

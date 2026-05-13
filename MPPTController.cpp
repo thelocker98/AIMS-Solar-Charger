@@ -573,7 +573,7 @@ String MPPTController::getBatteryTypeString(BatteryType type) {
     }
 }
 
-String MPPTController::getModelTypeString(MachineType type) {
+String MPPTController::getMachineTypeString(MachineType type) {
     switch(type) {
         case CHARGE: return "Solar Charger";
         case INVERTER: return "Inverter";

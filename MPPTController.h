@@ -153,7 +153,7 @@ public:
     String getModeString(MPPTMode mode);
     String getChargeModeString(ChargingMode mode);
     String getBatteryTypeString(BatteryType type);
-    String getModelTypeString(MachineType type);
+    String getMachineTypeString(MachineType type);
 
 private:
     HardwareSerial* _serial;

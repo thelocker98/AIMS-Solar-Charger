@@ -5,16 +5,15 @@ MPPTController mppt(mpptSerial, 16, 17);
 
 void printDeviceInfo() {
   MPPTInfo* info = mppt.getDeviceInfo();
-  MPPTCal* cal = mppt.getCalibration();
 
   Serial.println("Device Information");
   Serial.println("------------------");
-  Serial.printf("Machine Type: %u\n", info->machineType);
-  Serial.printf("Serial Number: %s\n", info->serialNumber.c_str());
-  Serial.printf("Model: %s\n", info->machineModel.c_str());
-  Serial.printf("Main Firmware: %s\n", info->mainFirmware.c_str());
-  Serial.printf("Slave Firmware: %s\n", info->slaveFirmware.c_str());
-  Serial.printf("Battery Type: %s\n", mppt.getBatteryTypeString(cal->batteryType).c_str());
+  Serial.printf("Machine Type: %u\n",  mppt.getMachineTypeString(info->machineType));
+  Serial.printf("Serial Number: %s\n", info->serialNumber;
+  Serial.printf("Model: %s\n", info->machineModel);
+  Serial.printf("Main Firmware: %s\n", info->mainFirmware);
+  Serial.printf("Slave Firmware: %s\n", info->slaveFirmware);
+  Serial.printf("Battery Type: %s\n", mppt.getBatteryTypeString(cal->batteryType));
 }
 
 void setup() {
