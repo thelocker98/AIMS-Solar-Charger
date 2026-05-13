@@ -8,12 +8,13 @@ void printDeviceInfo() {
 
   Serial.println("Device Information");
   Serial.println("------------------");
-  Serial.printf("Machine Type: %u\n",  mppt.getMachineTypeString(info->machineType));
-  Serial.printf("Serial Number: %s\n", info->serialNumber;
-  Serial.printf("Model: %s\n", info->machineModel);
-  Serial.printf("Main Firmware: %s\n", info->mainFirmware);
-  Serial.printf("Slave Firmware: %s\n", info->slaveFirmware);
-  Serial.printf("Battery Type: %s\n", mppt.getBatteryTypeString(cal->batteryType));
+  Serial.printf("Machine Type: %s\n", mppt.getMachineTypeString(info->machineType).c_str());
+  Serial.printf("Serial Number: %s\n", info->serialNumber.c_str());
+  Serial.printf("Battery Type: %s\n", mppt.getBatteryTypeString(info->batteryType).c_str());
+  Serial.printf("Machine Model: %s\n", info->machineModel.c_str());
+  Serial.printf("Master Firmware: %s\n", info->masterFirmware.c_str());
+  Serial.printf("Slave Firmware: %s\n", info->slaveFirmware.c_str());
+  Serial.printf("First Power Code Date: %u\n", info->firstPowerCodeDate);
 }
 
 void setup() {
@@ -26,8 +27,6 @@ void setup() {
     Serial.println("Check wiring: RX=GPIO16, TX=GPIO17");
     return;
   }
-
-
 }
 
 void loop() {
@@ -36,5 +35,6 @@ void loop() {
   } else {
     Serial.println("Failed to read device information.");
   }
+
   delay(2000);
 }

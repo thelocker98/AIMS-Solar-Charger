@@ -8,8 +8,11 @@ void printCalibration() {
 
   Serial.println("Calibration Data");
   Serial.println("----------------");
+  Serial.printf("Serial Number: %s\n", cal->serialNum.c_str());
   Serial.printf("Address: 0x%02X\n", cal->machineAddress);
   Serial.printf("Battery Type: %s\n", mppt.getBatteryTypeString(cal->batteryType).c_str());
+  Serial.printf("Machine Model: %s\n", cal->machineModel.c_str());
+  Serial.printf("Firmware: %s\n", cal->firmware.c_str());
   Serial.printf("Max Charge Current: %u A\n", cal->maxChargeCurrent);
   Serial.printf("Buck Charge Voltage: %.1f V\n", cal->buckChargeVoltage);
   Serial.printf("Float Charge Voltage: %.1f V\n", cal->floatChargeVoltage);
