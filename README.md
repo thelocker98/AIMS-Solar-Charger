@@ -9,6 +9,17 @@ This Arduino library provides a simple interface for communicating with AIMS MPP
 - Supports common configuration actions such as setting battery type, charge current, and machine address.
 - Includes ready-to-run examples for reading data and writing settings.
 
+## Wiring
+The wiring for the AIMS Solar Charger is as show below.
+
+```
+pin: 1 -> RS485 A+
+pin: 2 -> RS485 B-
+pin: 4 -> Ground
+```
+ ### Image
+ <img src="assets/RJ45-Pinout.jpg" width="300">
+
 ## Included Examples
 
 - `examples/read_measurements/read_measurements.ino`
