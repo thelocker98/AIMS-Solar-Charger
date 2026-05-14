@@ -2,33 +2,33 @@
 
 // Create serial instance for UART2 (pins 16=RX, 17=TX)
 HardwareSerial mpptSerial(2);
-MPPTController mppt(mpptSerial, 16, 17);
+MPPTController mppt(mpptSerial, 0x01, 16, 17);
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println("\nMPPT Solar Controller Library");
-  Serial.println("Example: Basic Reading\n");
+    Serial.begin(115200);
+    Serial.println("\nMPPT Solar Controller Library");
+    Serial.println("Example: Basic Reading\n");
 
-  // Initialize the MPPT controller
-  if (mppt.begin(9600)) {
-    Serial.println("MPPT Controller initialized successfully.\n");
-  } else {
-    Serial.println("Failed to initialize MPPT Controller");
-    Serial.println("   Check wiring: RX=GPIO16, TX=GPIO17");
-  }
+    // Initialize the MPPT controller
+    if (mppt.begin(9600)) {
+        Serial.println("MPPT Controller initialized successfully.\n");
+    } else {
+        Serial.println("Failed to initialize MPPT Controller");
+        Serial.println("   Check wiring: RX=GPIO16, TX=GPIO17");
+    }
 }
 
 void loop() {
-  if (!mppt.readMeasurements()) {
-    Serial.println("Read failed.");
-    delay(3000);
-    return;
-  }
+    if (!mppt.readMeasurements()) {
+        Serial.println("Read failed.");
+        delay(3000);
+        return;
+    }
 
-  MPPTMeasurements* data = mppt.getMeasurements();
-  MPPTInfo* info = mppt.getDeviceInfo();
+    MPPTMeasurements* data = mppt.getMeasurements();
+    MPPTInfo* info = mppt.getDeviceInfo();
 
-  if (info->valid) {
+
     Serial.println("--------------------------------------------");
     Serial.println("Current Solar Status");
     Serial.println("--------------------------------------------");
@@ -59,7 +59,6 @@ void loop() {
     }
 
     Serial.println("--------------------------------------------\n");
-  }
 
-  delay(3000);
+    delay(3000);
 }

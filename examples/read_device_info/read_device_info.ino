@@ -1,7 +1,7 @@
 #include "MPPTController.h"
 
 HardwareSerial mpptSerial(2);
-MPPTController mppt(mpptSerial, 16, 17);
+MPPTController mppt(mpptSerial, 0x01, 16, 17);
 
 void printDeviceInfo() {
   MPPTInfo* info = mppt.getDeviceInfo();

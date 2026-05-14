@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <HardwareSerial.h>
+#include <cstdint>
 
 // Operating Modes
 enum MPPTMode {
@@ -25,11 +26,16 @@ enum ChargingMode {
 
 // Battery Types
 enum BatteryType {
-    BATTERY_USER_DEFINE = 0x00,
-    BATTERY_VENTED = 0x01,
-    BATTERY_SEALED = 0x02,
-    BATTERY_GEL = 0x03,
-    BATTERY_NICD = 0x04
+    BATTERY_GEL1 = 0x00, // Gel1
+    BATTERY_AGM1 = 0x01, // AGM1
+    BATTERY_SEALED1 = 0x02, // Sealed1
+    BATTERY_FLOODED1 = 0x03, // Floaded 1
+    BATTERY_LITHIUM = 0x04, // Lithium
+    BATTERY_GEL = 0x05, // Gel
+    BATTERY_AGM = 0x06, // AGM
+    BATTERY_SEALED = 0x07, // Sealed
+    BATTERY_FLOODED = 0x08, // Floaded
+    BATTERY_USER_DEFINE = 0x09, // UserDefinded
 };
 
 enum MachineType{
@@ -120,7 +126,7 @@ enum ErrorFlag {
 
 class MPPTController {
 public:
-    MPPTController(HardwareSerial& serial, int rxPin, int txPin);
+    MPPTController(HardwareSerial& serial, uint8_t add, int rxPin, int txPin);
     ~MPPTController();
 
     // Initialization
@@ -138,6 +144,7 @@ public:
     // Write functions
     bool setBatteryType(BatteryType type);
     bool setMaxChargeCurrent(float current);
+    bool LoadModeON(bool loadOn);
     bool setChargeVoltages(float buckVoltage, float floatVoltage);
     bool setMachineAddress(uint8_t addr);
     bool clearTotalPower();

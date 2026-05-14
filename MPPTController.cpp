@@ -1,8 +1,9 @@
 #include "MPPTController.h"
+#include <cstdint>
 
-MPPTController::MPPTController(HardwareSerial& serial, int rxPin, int txPin)
+MPPTController::MPPTController(HardwareSerial& serial, uint8_t addr, int rxPin, int txPin)
     : _serial(&serial), _rxPin(rxPin), _txPin(txPin) {
-    _address = 0x01;
+    _address = addr;
     _lastRead = 0;
     _readInterval = 3000;  // 3 seconds default
     memset(&_measurements, 0, sizeof(_measurements));
@@ -34,9 +35,12 @@ void MPPTController::setAddress(uint8_t addr) {
 
 uint16_t MPPTController::calculateChecksum(uint8_t* data, uint8_t len) {
     uint16_t sum = 0;
+    Serial.printf("Checksum bytes (0-%d): ", len);
     for (uint8_t i = 0; i < len; i++) {
         sum += data[i];
+        Serial.printf("0x%02X + ", data[i]);
     }
+    Serial.printf("= 0x%04X\n", sum);
     return sum;
 }
 
@@ -46,6 +50,11 @@ bool MPPTController::sendCommand(uint8_t controlCode, uint8_t functionCode,
     uint8_t command[128];
     uint8_t cmdIdx = 0;
 
+    // CRITICAL: Clear the serial buffer BEFORE sending
+     while (_serial->available()) {
+         _serial->read();
+     }
+
     // Build command frame
     command[cmdIdx++] = 0x55;           // Header
     command[cmdIdx++] = 0xAA;           // Header
@@ -54,26 +63,36 @@ bool MPPTController::sendCommand(uint8_t controlCode, uint8_t functionCode,
     command[cmdIdx++] = functionCode;   // Function code
 
     // Data length (2 bytes, little endian)
-    command[cmdIdx++] = dataLen & 0xFF;
     command[cmdIdx++] = (dataLen >> 8) & 0xFF;
+    command[cmdIdx++] = dataLen & 0xFF;
 
     // Copy command data
     for (uint8_t i = 0; i < dataLen; i++) {
-        command[cmdIdx++] = cmdData[i];
+        command[cmdIdx] = cmdData[i];
+        cmdIdx +=1;
     }
 
+
     // Calculate checksum (from address to end of data)
-    uint16_t checksum = calculateChecksum(&command[2], cmdIdx - 2);
+    uint16_t checksum = calculateChecksum(&command[0], cmdIdx);
     // Protocol uses little-endian checksum: low byte, then high byte
-    command[cmdIdx++] = checksum & 0xFF;
     command[cmdIdx++] = (checksum >> 8) & 0xFF;
+    command[cmdIdx++] = checksum & 0xFF;
+
+
+    Serial.print("TX: ");
+    for (uint8_t i = 0; i < cmdIdx; i++) {
+        Serial.printf("0x%02X ", command[i]);
+    }
+    Serial.println();
+
 
     // Send command
     _serial->write(command, cmdIdx);
     _serial->flush();
 
     // Wait for response
-    delay(100);
+    delay(200);
 
     // Read response
     *respLen = 0;
@@ -86,6 +105,12 @@ bool MPPTController::sendCommand(uint8_t controlCode, uint8_t functionCode,
         if (*respLen >= 64) break;
     }
 
+    Serial.print("Rx: ");
+    for (uint8_t i = 0; i < *respLen; i++) {
+        Serial.printf("0x%02X ", response[i]);
+    }
+    Serial.println();
+
     // Validate response
     if (*respLen < 9) return false;
     if (response[0] != 0x55 || response[1] != 0xAA) return false;
@@ -95,7 +120,7 @@ bool MPPTController::sendCommand(uint8_t controlCode, uint8_t functionCode,
 }
 
 bool MPPTController::readMeasurements() {
-    uint8_t response[64];
+    uint8_t response[128];
     uint8_t respLen = 0;
 
     // Function 00 - No data needed
@@ -213,7 +238,7 @@ MPPTMeasurements* MPPTController::parseMeasurementResponse(uint8_t* data, uint8_
 }
 
 bool MPPTController::readCalibration() {
-    uint8_t response[64];
+    uint8_t response[128];
     uint8_t respLen = 0;
 
     if (sendCommand(0x00, 0x01, nullptr, 0, response, &respLen)) {
@@ -364,66 +389,47 @@ MPPTInfo* MPPTController::parseDeviceInfoResponse(uint8_t* data, uint8_t len) {
     return &_info;
 }
 
-// bool MPPTController::readMonthlyPower(uint8_t year, uint8_t month, uint32_t* power) {
-//   uint8_t cmdData[2] = {year, month};
-//   uint8_t response[64];
-//   uint8_t respLen = 0;
-
-//   if (sendCommand(0x00, 0x05, cmdData, 2, response, &respLen)) {
-//     if (respLen >= 11) {
-//       *power = (response[7] << 24) | (response[8] << 16) |
-//                (response[9] << 8) | response[10];
-//       return true;
-//     }
-//   }
-//   return false;
-// }
-
-// bool MPPTController::readDailyPower(uint8_t year, uint8_t month, uint8_t day, uint16_t* power) {
-//   uint8_t cmdData[3] = {year, month, day};
-//   uint8_t response[64];
-//   uint8_t respLen = 0;
-
-//   if (sendCommand(0x00, 0x06, cmdData, 3, response, &respLen)) {
-//     if (respLen >= 9) {
-//       *power = (response[7] << 8) | response[8];
-//       return true;
-//     }
-//   }
-//   return false;
-// }
-
-// bool MPPTController::readHourlyPower(uint8_t day, uint8_t hour, uint16_t* power) {
-//   uint8_t cmdData[2] = {day, hour};
-//   uint8_t response[64];
-//   uint8_t respLen = 0;
-
-//   if (sendCommand(0x00, 0x07, cmdData, 2, response, &respLen)) {
-//     if (respLen >= 9) {
-//       *power = (response[7] << 8) | response[8];
-//       return true;
-//     }
-//   }
-//   return false;
-// }
-
 // Write functions
 bool MPPTController::setBatteryType(BatteryType type) {
     uint8_t cmdData[1] = {(uint8_t)type};
-    uint8_t response[64];
+    uint8_t response[128];
     uint8_t respLen = 0;
 
     return sendCommand(0x01, 0x0C, cmdData, 1, response, &respLen);
 }
 
 bool MPPTController::setMaxChargeCurrent(float current) { // Unit is Amps
-    current *= 100;
-    uint8_t cmdData[2] = {(uint8_t)(current >> 8), (uint8_t)(current & 0xFF)};
-    uint8_t response[64];
+    // Scale: 1 Amp = 100 (0.01A per unit)
+    uint16_t scaledValue = (uint16_t)(current * 100.0f);
+
+    // Data: High byte first, then low byte
+    uint8_t cmdData[2] = {
+        (uint8_t)((scaledValue >> 8) & 0xFF),  // High byte
+        (uint8_t)(scaledValue & 0xFF)          // Low byte
+    };
+
+    uint8_t response[128];
     uint8_t respLen = 0;
+
+    Serial.printf("Setting max charge current: %.2f A -> raw value: %d (0x%04X)\n",
+                  current, scaledValue, scaledValue);
 
     return sendCommand(0x01, 0x0E, cmdData, 2, response, &respLen);
 }
+
+bool MPPTController::LoadModeON(bool loadOn) {
+    uint8_t response[128];
+    uint8_t respLen = 0;
+
+    if (loadOn){
+        // return sendCommand(0x01, 0x2E, nullptr, 0, response, &respLen);
+        return sendCommand(0x02, 0x00, nullptr, 0, response, &respLen);
+    }else{
+        //return sendCommand(0x01, 0x2F, nullptr, 0, response, &respLen);
+        return sendCommand(0x02, 0x09, nullptr, 0, response, &respLen);
+    }
+}
+
 
 bool MPPTController::setChargeVoltages(float buckVoltage, float floatVoltage) { // Unit is Volts
     uint8_t cmdData[4];
@@ -436,7 +442,7 @@ bool MPPTController::setChargeVoltages(float buckVoltage, float floatVoltage) { 
     cmdData[3] = floatRaw & 0xFF;
 
     // Send buck voltage (0x0F) and float voltage (0x10)
-    uint8_t response[64];
+    uint8_t response[128];
     uint8_t respLen = 0;
 
     if (!sendCommand(0x01, 0x0F, cmdData, 2, response, &respLen)) return false;
@@ -445,40 +451,37 @@ bool MPPTController::setChargeVoltages(float buckVoltage, float floatVoltage) { 
 
 bool MPPTController::setMachineAddress(uint8_t addr) {
     uint8_t cmdData[1] = {addr};
-    uint8_t response[64];
+    uint8_t response[128];
     uint8_t respLen = 0;
 
-    if (sendCommand(0x01, 0x0B, cmdData, 1, response, &respLen)) {
-        _address = addr;
-        return true;
-    }
-
-    return false;
+    return sendCommand(0x01, 0x0B, cmdData, 1, response, &respLen);
 }
 
 bool MPPTController::clearTotalPower() {
-    uint8_t response[64];
+    uint8_t response[128];
     uint8_t respLen = 0;
 
     return sendCommand(0x01, 0x0D, nullptr, 0, response, &respLen);
 }
 
 bool MPPTController::emergencyStop() {
-    uint8_t response[64];
+    uint8_t cmdData[1] = {0x09};
+    uint8_t response[128];
     uint8_t respLen = 0;
 
     return sendCommand(0x02, 0x09, nullptr, 0, response, &respLen);
 }
 
 bool MPPTController::clearEmergencyStop() {
-    uint8_t response[64];
+    uint8_t cmdData[1] = {0x0A};
+    uint8_t response[128];
     uint8_t respLen = 0;
 
     return sendCommand(0x02, 0x0A, nullptr, 0, response, &respLen);
 }
 
 bool MPPTController::resetToDefaults() {
-    uint8_t response[64];
+    uint8_t response[128];
     uint8_t respLen = 0;
 
     return sendCommand(0x02, 0x00, nullptr, 0, response, &respLen);
@@ -563,13 +566,18 @@ String MPPTController::getChargeModeString(ChargingMode mode) {
 }
 
 String MPPTController::getBatteryTypeString(BatteryType type) {
-    switch(type) {
-        case BATTERY_USER_DEFINE: return "User Define";
-        case BATTERY_VENTED: return "Vented";
-        case BATTERY_SEALED: return "Sealed";
+    switch(type){
+        case BATTERY_GEL1: return "Gel1";
+        case BATTERY_AGM1: return "AGM1";
+        case BATTERY_SEALED1: return "Sealed1";
+        case BATTERY_FLOODED1: return "Floaded 1";
+        case BATTERY_LITHIUM: return "Lithium";
         case BATTERY_GEL: return "Gel";
-        case BATTERY_NICD: return "NiCd";
-        default: return "Unknown";
+        case BATTERY_AGM: return "AGM";
+        case BATTERY_SEALED: return "Sealed";
+        case BATTERY_FLOODED: return "Floaded";
+        case BATTERY_USER_DEFINE: return "UserDefinded";
+        default: return "Unknown Battery Type";
     }
 }
 
