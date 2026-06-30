@@ -171,9 +171,7 @@ private:
     MPPTMeasurements _measurements;
     MPPTCal _calibration;
     MPPTInfo _info;
-    unsigned long _lastRead;
-    uint16_t _readInterval;
-
+    
     // Protocol functions
     bool sendCommand(uint8_t controlCode, uint8_t functionCode,
                     uint8_t* data, uint8_t dataLen, uint8_t* response, uint8_t* respLen);

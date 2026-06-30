@@ -2,10 +2,8 @@
 #include <cstdint>
 
 MPPTController::MPPTController(HardwareSerial& serial, uint8_t addr, int rxPin, int txPin)
-    : _serial(&serial), _rxPin(rxPin), _txPin(txPin) {
+: _serial(&serial), _rxPin(rxPin), _txPin(txPin) {
     _address = addr;
-    _lastRead = 0;
-    _readInterval = 3000;  // 3 seconds default
     memset(&_measurements, 0, sizeof(_measurements));
     memset(&_calibration, 0, sizeof(_calibration));
     memset(&_info, 0, sizeof(_info));
