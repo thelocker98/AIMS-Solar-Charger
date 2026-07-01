@@ -420,11 +420,9 @@ bool MPPTController::LoadModeON(bool loadOn) {
     uint8_t respLen = 0;
 
     if (loadOn){
-        // return sendCommand(0x01, 0x2E, nullptr, 0, response, &respLen);
-        return sendCommand(0x02, 0x00, nullptr, 0, response, &respLen);
+        return sendCommand(0x01, 0x2E, nullptr, 0, response, &respLen);
     }else{
-        //return sendCommand(0x01, 0x2F, nullptr, 0, response, &respLen);
-        return sendCommand(0x02, 0x09, nullptr, 0, response, &respLen);
+        return sendCommand(0x01, 0x2F, nullptr, 0, response, &respLen);
     }
 }
 
